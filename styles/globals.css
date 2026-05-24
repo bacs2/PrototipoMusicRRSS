@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Epilogue:wght@400;700;800;900&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-container-low: #f4f4f5;
+  --color-surface-container: #e4e4e7;
+  --color-surface-container-high: #d4d4d8;
+  --color-surface-container-highest: #a1a1aa;
+  --color-primary: #7c3aed;
+  --color-primary-dim: #6d28d9;
+  --color-secondary: #0284c7;
+  --color-on-surface: #18181b;
+  --color-on-surface-variant: #52525b;
+  --color-outline-variant: #d4d4d8;
+}
+
+.dark {
+  --color-background: #0e0e0e;
+  --color-surface: #0e0e0e;
+  --color-surface-container-low: #131313;
+  --color-surface-container: #1a1a1a;
+  --color-surface-container-high: #20201f;
+  --color-surface-container-highest: #262626;
+  --color-primary: #cc97ff;
+  --color-primary-dim: #9c48ea;
+  --color-secondary: #34b5fa;
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #adaaaa;
+  --color-outline-variant: #484847;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", system-ui, -apple-system, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+}
+
+.font-headline {
+  font-family: "Epilogue", sans-serif;
+}
+
+.font-body {
+  font-family: "Manrope", sans-serif;
+}
+
+.label-md {
+  font-family: "Manrope", sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-on-surface-variant);
+}
