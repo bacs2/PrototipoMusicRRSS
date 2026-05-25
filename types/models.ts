@@ -14,6 +14,8 @@ export type Artista = {
   mbid?: string | null;
   nombre: string;
   generos?: string[] | null;
+  avatar_url?: string | null;
+  bio?: string | null;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -56,4 +58,37 @@ export type ReviewShareData = {
   rating: number;
   comment?: string | null;
   coverUrl?: string | null;
+};
+
+export type TimelineItem = {
+  id: string;
+  date: string;
+  user?: { name: string; avatar?: string | null } | null;
+  action: string;
+  description?: string | null;
+};
+
+export type RatingDistribution = {
+  stars: number;
+  count: number;
+  percentage: number;
+};
+
+export type TrendingItem = {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  coverUrl?: string | null;
+  rating?: number;
+  reviewCount: number;
+};
+
+export type FriendActivityItem = {
+  id: string;
+  userName: string;
+  userAvatar: string | null;
+  action: string;
+  itemTitle: string;
+  itemCover: string | null;
+  rating?: number;
 };

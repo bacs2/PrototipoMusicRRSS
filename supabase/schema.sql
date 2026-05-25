@@ -1,11 +1,12 @@
 create extension if not exists "pgcrypto";
 
 create table if not exists "Datos_usuario" (
-  id uuid primary key references auth.users (id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
   username text unique not null,
   nombre text,
   bio text,
   avatar_url text,
+  password_hash text,
   created_at timestamptz not null default now()
 );
 
@@ -22,6 +23,8 @@ create table if not exists "Artistas" (
   mbid text unique,
   nombre text not null,
   generos text[],
+  avatar_url text,
+  bio text,
   metadata jsonb,
   created_at timestamptz not null default now()
 );
@@ -45,9 +48,20 @@ create table if not exists "Canciones" (
   album_id uuid references "Albumes" (id) on delete set null,
   titulo text not null,
   duracion_ms integer,
+  posicion integer not null default 0,
   metadata jsonb,
   created_at timestamptz not null default now()
 );
+
+-- Migration: add posicion to existing tables
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'Canciones' and column_name = 'posicion'
+  ) then
+    alter table "Canciones" add column posicion integer not null default 0;
+  end if;
+end $$;
 
 create table if not exists "Resenas_de_usuario" (
   id uuid primary key default gen_random_uuid(),
@@ -65,6 +79,8 @@ create table if not exists "Coleccion_o_Lista" (
   usuario_id uuid not null references "Datos_usuario" (id) on delete cascade,
   nombre text not null,
   descripcion text,
+  -- items: array of { item_type: "artista"|"album"|"cancion", item_id: uuid, annotation?: text, must_listen?: text }
+  -- Legacy format: { album_id: uuid, annotation?: text, must_listen?: text }
   items jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
@@ -109,6 +125,7 @@ create index if not exists idx_seguidores_seguidor on "Seguidores_por_usuario" (
 create index if not exists idx_seguidores_seguido on "Seguidores_por_usuario" (seguido_id);
 create index if not exists idx_artistas_nombre on "Artistas" (nombre);
 create index if not exists idx_albumes_titulo on "Albumes" (titulo);
+create index if not exists idx_canciones_album on "Canciones" (album_id);
 create index if not exists idx_canciones_titulo on "Canciones" (titulo);
 create index if not exists idx_resenas_usuario on "Resenas_de_usuario" (usuario_id);
 create index if not exists idx_resenas_item on "Resenas_de_usuario" (item_type, item_id);
@@ -133,7 +150,7 @@ create policy "Datos_usuario_select" on "Datos_usuario"
   for select using (true);
 
 create policy "Datos_usuario_insert" on "Datos_usuario"
-  for insert with check (auth.uid() = id);
+  for insert with check (true);
 
 create policy "Datos_usuario_update" on "Datos_usuario"
   for update using (auth.uid() = id);
@@ -156,6 +173,18 @@ create policy "Albumes_select" on "Albumes"
 create policy "Canciones_select" on "Canciones"
   for select using (true);
 
+drop policy if exists "Artistas_insert" on "Artistas";
+create policy "Artistas_insert" on "Artistas"
+  for insert with check (true);
+
+drop policy if exists "Albumes_insert" on "Albumes";
+create policy "Albumes_insert" on "Albumes"
+  for insert with check (true);
+
+drop policy if exists "Canciones_insert" on "Canciones";
+create policy "Canciones_insert" on "Canciones"
+  for insert with check (true);
+
 create policy "Resenas_select" on "Resenas_de_usuario"
   for select using (true);
 
@@ -168,8 +197,15 @@ create policy "Resenas_update" on "Resenas_de_usuario"
 create policy "Resenas_delete" on "Resenas_de_usuario"
   for delete using (auth.uid() = usuario_id);
 
-create policy "Colecciones_select" on "Coleccion_o_Lista"
+drop policy if exists "Colecciones_select" on "Coleccion_o_Lista";
+
+create policy "Colecciones_select_own" on "Coleccion_o_Lista"
   for select using (auth.uid() = usuario_id);
+
+drop policy if exists "Colecciones_select_public" on "Coleccion_o_Lista";
+
+create policy "Colecciones_select_public" on "Coleccion_o_Lista"
+  for select using (true);
 
 create policy "Colecciones_insert" on "Coleccion_o_Lista"
   for insert with check (auth.uid() = usuario_id);
@@ -231,3 +267,25 @@ drop trigger if exists resenas_updated_at on "Resenas_de_usuario";
 create trigger resenas_updated_at
 before update on "Resenas_de_usuario"
 for each row execute procedure set_updated_at();
+
+create or replace function add_posicion_column()
+returns void as $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'Canciones' and column_name = 'posicion'
+  ) then
+    alter table "Canciones" add column posicion integer not null default 0;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+create or replace function delete_canciones_by_album(p_album_id uuid)
+returns void as $$
+begin
+  delete from "Canciones" where album_id = p_album_id;
+end;
+$$ language plpgsql security definer;
+
+grant execute on function add_posicion_column() to anon, authenticated;
+grant execute on function delete_canciones_by_album(uuid) to anon, authenticated;

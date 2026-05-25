@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Search, Bell, User, Sun, Moon } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
 
@@ -10,10 +10,13 @@ const NAV_LINKS = [
   { name: "Explore", href: "/explore" },
   { name: "Lists", href: "/lists" },
   { name: "Artists", href: "/artists" },
+  { name: "Biblioteca", href: "/library" },
+  { name: "Perfil", href: "/profile/demo" },
 ];
 
 export default function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
 
   return (
@@ -43,14 +46,25 @@ export default function TopNav() {
       </ul>
 
       <div className="flex items-center gap-6 flex-1 justify-end">
-        <div className="relative group hidden md:block">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const q = formData.get("q") as string;
+            if (q.trim()) {
+              router.push(`/search?q=${encodeURIComponent(q.trim())}`);
+            }
+          }}
+          className="relative group hidden md:block"
+        >
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant group-focus-within:text-primary transition-colors" />
           <input
             type="text"
+            name="q"
             placeholder="Search artists..."
             className="bg-surface-container-low border border-outline-variant rounded-full pl-10 pr-4 py-2 text-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary/50 focus:bg-surface-container transition-all w-64"
           />
-        </div>
+        </form>
 
         <button
           onClick={toggleTheme}
@@ -69,9 +83,12 @@ export default function TopNav() {
           <span className="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full border border-background" />
         </button>
 
-        <button className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden">
+        <Link
+          href="/auth"
+          className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden"
+        >
           <User className="w-4 h-4 text-on-surface-variant" />
-        </button>
+        </Link>
       </div>
     </nav>
   );
