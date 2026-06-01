@@ -124,7 +124,7 @@ export async function searchArtists(
 export async function lookupArtist(
   mbid: string
 ): Promise<Record<string, unknown>> {
-  const url = `${MB_API_BASE}/artist/${mbid}?fmt=json&inc=tags+artist-rels`;
+  const url = `${MB_API_BASE}/artist/${mbid}?fmt=json&inc=aliases+genres+tags+ratings+artist-rels+url-rels`;
   const res = await rateLimitedFetch(url);
   if (!res.ok) throw new Error(`MB lookup artist error: ${res.status}`);
   return res.json();
@@ -178,14 +178,74 @@ export async function getCoverArtUrl(
 export function extractArtistData(
   artist: Record<string, unknown>
 ): { mbid: string; nombre: string; generos: string[]; metadata: Record<string, unknown> } {
+  const extractNames = (items: Record<string, unknown>[] | undefined): string[] =>
+    (items ?? [])
+      .filter((t) => !((t.name as string) ?? "").startsWith("_"))
+      .slice(0, 10)
+      .map((t) => t.name as string);
+
+  const genres = extractNames(artist.genres as Record<string, unknown>[]);
+  const tags = extractNames(artist.tags as Record<string, unknown>[]);
+  const generos = genres.length > 0 ? genres : tags;
+
+  const artistRels = ((artist["artist-rels"] as Record<string, unknown>[]) ?? []).map(
+    (rel) => ({
+      type: rel.type,
+      direction: rel.direction,
+      target_name: (rel.artist as Record<string, string>)?.name ?? null,
+      target_mbid: (rel.artist as Record<string, string>)?.id ?? null,
+      target_type: (rel["target-type"] as string) ?? null,
+      begin: rel.begin ?? null,
+      end: rel.end ?? null,
+      ended: rel.ended ?? false,
+      attributes: (rel.attributes as unknown[]) ?? [],
+    })
+  );
+
+  const urlRels = ((artist["url-rels"] as Record<string, unknown>[]) ?? []).map(
+    (rel) => ({
+      type: rel.type,
+      url: rel.target,
+      begin: rel.begin ?? null,
+      end: rel.end ?? null,
+      ended: rel.ended ?? false,
+    })
+  );
+
+  const aliases = ((artist.aliases as Record<string, unknown>[]) ?? []).map(
+    (a) => ({
+      name: a.name,
+      sort_name: a["sort-name"],
+      type: a.type ?? null,
+      locale: a.locale ?? null,
+      primary: a.primary ?? false,
+    })
+  );
+
   return {
     mbid: artist.id as string,
     nombre: artist.name as string,
-    generos: extractTags(artist as Parameters<typeof extractTags>[0]),
+    generos,
     metadata: {
+      sort_name: artist["sort-name"] ?? null,
+      disambiguation: artist.disambiguation ?? null,
       type: artist.type ?? null,
+      type_id: artist["type-id"] ?? null,
       country: artist.country ?? null,
-      begin_area: (artist["begin-area"] as Record<string, string>)?.name ?? null,
+      area: artist.area ?? null,
+      begin_area: artist["begin-area"] ?? null,
+      end_area: artist["end-area"] ?? null,
+      life_span: artist["life-span"] ?? null,
+      gender: artist.gender ?? null,
+      gender_id: artist["gender-id"] ?? null,
+      isnis: artist.isnis ?? [],
+      ipis: artist.ipis ?? [],
+      aliases,
+      genres,
+      tags,
+      rating: artist.rating ?? null,
+      artist_rels: artistRels,
+      url_rels: urlRels,
     },
   };
 }

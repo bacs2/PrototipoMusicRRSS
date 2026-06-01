@@ -33,15 +33,17 @@ export function unsignToken(token: string): string | null {
 
 export const SESSION_COOKIE = "raterecord_session";
 
+const DEMO_USER_ID = "8d992fab-334f-47fc-b8ca-12cc979a0572";
+
 export async function getCurrentUserId(): Promise<string | undefined> {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE)?.value;
-    if (!token) return process.env.DEMO_USER_ID;
+    if (!token) return DEMO_USER_ID;
 
     const userId = unsignToken(token);
-    return userId ?? process.env.DEMO_USER_ID;
+    return userId ?? DEMO_USER_ID;
   } catch {
-    return process.env.DEMO_USER_ID;
+    return DEMO_USER_ID;
   }
 }

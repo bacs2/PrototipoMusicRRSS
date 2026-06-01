@@ -5,6 +5,8 @@ import { SectionHeader } from "../../../../components/SectionHeader";
 import { MediaCard } from "../../../../components/MediaCard";
 import { RatingBar } from "../../../../components/RatingBar";
 import { RatingPanel } from "../../../../components/RatingPanel";
+import { Tracklist } from "../../../../components/Tracklist";
+import { ItemShareButton } from "../../../../components/ItemShareButton";
 import {
   getItemDetails,
   getItemReviews,
@@ -17,8 +19,6 @@ import type { ItemType, RatingDistribution } from "../../../../types/models";
 import {
   Star,
   Play,
-  Heart,
-  Ellipsis,
   TrendingUp,
   Menu,
 } from "lucide-react";
@@ -81,67 +81,6 @@ type AttributeMock = (typeof mockAttributes)[number];
 type ItemPageProps = {
   params: Promise<{ type: ItemType; id: string }>;
 };
-
-function TrackItem({ track, isLast }: { track: TrackMock; isLast: boolean }) {
-  return (
-    <div
-      className={`group flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
-        track.active
-          ? "bg-primary/10 text-primary"
-          : "hover:bg-surface-container"
-      } ${!isLast ? "" : ""}`}
-    >
-      <div className="flex items-center gap-4 min-w-0">
-        <span className="w-6 text-sm text-center shrink-0">
-          {track.active ? (
-            <Play className="w-4 h-4 fill-current" />
-          ) : (
-            <span className="text-on-surface-variant group-hover:hidden">
-              {String(track.number).padStart(2, "0")}
-            </span>
-          )}
-        </span>
-        <span className="text-sm truncate">{track.title}</span>
-      </div>
-      <div className="flex items-center gap-3 shrink-0">
-        <button className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-primary">
-          <Heart className="w-4 h-4" />
-        </button>
-        <button className="opacity-0 group-hover:opacity-100 transition-opacity text-on-surface-variant hover:text-on-surface">
-          <Ellipsis className="w-4 h-4" />
-        </button>
-        <span className="text-sm text-on-surface-variant w-10 text-right">
-          {track.duration}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Tracklist({ tracks }: { tracks: TrackMock[] }) {
-  const total = tracks.reduce((acc, t) => {
-    const [m, s] = t.duration.split(":").map(Number);
-    return acc + m * 60 + s;
-  }, 0);
-  const mins = Math.floor(total / 60);
-  const secs = total % 60;
-
-  return (
-    <div className="rounded-2xl bg-surface-container-low border border-white/5 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-headline text-xl font-bold">Tracklist</h3>
-        <span className="text-sm text-on-surface-variant">
-          {tracks.length} tracks &middot; {mins}:{String(secs).padStart(2, "0")}
-        </span>
-      </div>
-      <div className="space-y-0.5">
-        {tracks.map((track, i) => (
-          <TrackItem key={track.number} track={track} isLast={i === tracks.length - 1} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function FeaturedLists({ lists }: { lists: ListMock[] }) {
   return (
@@ -309,6 +248,9 @@ function AlbumHero({
               ))}
             </div>
             <span className="text-sm text-on-surface-variant">({reviewsCount} reseñas)</span>
+            <div className="ml-auto">
+              <ItemShareButton title={titulo} subtitle={artistaNombre ?? undefined} />
+            </div>
           </div>
         </div>
       </div>
@@ -384,6 +326,9 @@ function ArtistHero({
             <p className="text-xs text-zinc-500 tracking-wider uppercase">
               Works
             </p>
+          </div>
+          <div className="ml-auto">
+            <ItemShareButton title={nombre} />
           </div>
         </div>
       </div>
@@ -600,6 +545,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
                         title: t.titulo,
                         duration: msToDuration(t.duracion_ms),
                         active: false,
+                        dbId: t.id,
                       }))
                     : mockTracks
                 }
@@ -610,7 +556,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <RatingPanel
                 itemType={type}
                 itemId={id}
-                itemTitle={(item?.titulo as string) ?? undefined}
+                itemTitle={(item as { titulo?: string }).titulo ?? undefined}
                 userId={userId}
               />
               <CommunityRatings
@@ -670,17 +616,20 @@ export default async function ItemPage({ params }: ItemPageProps) {
               <MediaCard
                 type="album"
                 imageUrl={item.cover_url as string}
-                title={(item.titulo as string) ?? ""}
-                subtitle={(item.Artistas as Record<string, string>)?.nombre ?? ""}
+                title={(item as unknown as Record<string, unknown>)?.titulo as string ?? ""}
+                subtitle={(() => {
+                  const artistas = (item as unknown as Record<string, unknown>)?.Artistas as { nombre?: string }[] | undefined;
+                  return artistas?.[0]?.nombre ?? "";
+                })()}
               />
             ) : null}
             <div className="flex-1 min-w-0">
               <SectionHeader
                 eyebrow="Item"
-                title={(item?.titulo ?? item?.nombre ?? "Item") as string}
+                title={((item as unknown as Record<string, unknown>)?.titulo ?? (item as unknown as Record<string, unknown>)?.nombre ?? "Item") as string}
                 description={
-                  item?.generos?.length
-                    ? (item.generos as string[]).join(", ")
+                  ((item as unknown as Record<string, unknown>)?.generos as string[])?.length
+                    ? ((item as unknown as Record<string, unknown>)?.generos as string[]).join(", ")
                     : "Metadata, generos y reseñas."
                 }
               />
@@ -688,11 +637,11 @@ export default async function ItemPage({ params }: ItemPageProps) {
                 <span>Tipo: {type}</span>
                 {avgRating !== null ? (
                   <span className="font-semibold text-primary">
-                    {avgRating.toFixed(1)} avg &middot; {reviews.length} reseñas
+                    {avgRating.toFixed(1)} avg · {reviews.length} reseñas
                   </span>
                 ) : null}
-                {item?.fecha_lanzamiento ? (
-                  <span>Fecha: {item.fecha_lanzamiento as string}</span>
+                {(item as unknown as Record<string, unknown>)?.fecha_lanzamiento ? (
+                  <span>Fecha: {(item as unknown as Record<string, unknown>).fecha_lanzamiento as string}</span>
                 ) : null}
               </div>
             </div>
@@ -706,7 +655,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
               reviews.map((review) => (
                 <ReviewCard
                   key={review.id}
-                  title={(review.usuario as Record<string, string>)?.username ?? "usuario"}
+                  title={(review.usuario as { username?: string })?.username ?? "usuario"}
                   subtitle={type}
                   rating={review.rating}
                   comment={review.comentario}
@@ -718,7 +667,7 @@ export default async function ItemPage({ params }: ItemPageProps) {
             <RatingPanel
               itemType={type}
               itemId={id}
-              itemTitle={(item?.titulo ?? item?.nombre ?? undefined) as string | undefined}
+              itemTitle={((item as unknown as Record<string, unknown>)?.titulo as string | undefined) ?? (item as unknown as Record<string, unknown>)?.nombre as string | undefined}
               userId={userId}
             />
             <div className="rounded-2xl bg-surface-container-low border border-white/5 p-6">

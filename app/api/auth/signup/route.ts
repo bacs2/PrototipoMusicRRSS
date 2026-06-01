@@ -47,5 +47,5 @@ export async function POST(request: Request) {
 
   await setSessionCookie(user.id);
 
-  return NextResponse.json({ success: true, userId: user.id });
+  return NextResponse.json({ success: true, userId: user.id, username });
 }

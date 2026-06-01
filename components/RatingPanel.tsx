@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Library, Heart, Check, Send } from "lucide-react";
+import { Star, Library, Heart, Check, Send, Share2, Download, ExternalLink } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import type { ItemType } from "@/types/models";
 
@@ -27,6 +27,8 @@ export function RatingPanel({
   const [wishlistState, setWishlistState] = useState<ActionState>("idle");
   const [reviewState, setReviewState] = useState<ActionState>("idle");
   const [reviewMsg, setReviewMsg] = useState<string | null>(null);
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const [sharingReview, setSharingReview] = useState(false);
 
   const displayRating = hoverRating || rating;
   const canSubmit = rating > 0 && reviewState !== "loading";
@@ -96,14 +98,52 @@ export function RatingPanel({
     setReviewState("loading");
     setReviewMsg(null);
     try {
-      await insertAction("Resenas_de_usuario", {
-        rating: rating * 2,
-        comentario: comment || null,
-      });
+      const { data, error } = await supabaseBrowser()
+        .from("Resenas_de_usuario")
+        .insert({
+          usuario_id: userId,
+          item_type: itemType,
+          item_id: itemId,
+          rating: rating * 2,
+          comentario: comment || null,
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      setReviewId(data.id);
       setReviewState("success");
     } catch (err) {
       setReviewState("error");
       setReviewMsg("Error al publicar reseña. ¿Has iniciado sesión?");
+    }
+  };
+
+  const handleShareReview = async () => {
+    if (!reviewId) return;
+
+    setSharingReview(true);
+    const shareUrl = `${window.location.origin}/api/share/${reviewId}`;
+
+    try {
+      const imageBlob = await fetch(shareUrl).then((r) => r.blob());
+      const file = new File([imageBlob], "mi-resena.png", { type: "image/png" });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: `Mi reseña de ${itemTitle ?? "este álbum"}`,
+          text: `Le di ${rating.toFixed(1)}★ a ${itemTitle ?? "este álbum"} en RateRecord`,
+          files: [file],
+        });
+      } else {
+        window.open(shareUrl, "_blank");
+      }
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") {
+        console.error("Error sharing:", err);
+      }
+    } finally {
+      setSharingReview(false);
     }
   };
 
@@ -229,6 +269,23 @@ export function RatingPanel({
           </>
         )}
       </button>
+
+      {reviewState === "success" && reviewId && (
+        <button
+          onClick={handleShareReview}
+          disabled={sharingReview}
+          className="w-full flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold bg-gradient-to-br from-pink-500 to-orange-500 hover:opacity-90 disabled:opacity-40 text-white transition-all"
+        >
+          {sharingReview ? (
+            <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          ) : (
+            <>
+              <Share2 className="w-4 h-4" />
+              Compartir en Instagram
+            </>
+          )}
+        </button>
+      )}
 
       {reviewMsg ? (
         <p className="text-xs text-on-surface-variant text-center">

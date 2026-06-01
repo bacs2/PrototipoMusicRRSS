@@ -1,6 +1,7 @@
 "use client";
 
 import type { FriendActivityItem } from "../types/models";
+import { CardCarousel } from "./CardCarousel";
 
 const PLACEHOLDER_ITEMS: FriendActivityItem[] = [
   { id: "1", userName: "Ana", userAvatar: null, action: "reseñó", itemTitle: "Motomami", itemCover: null, rating: 9.0 },
@@ -16,13 +17,13 @@ export const FriendActivityList = () => {
       <h2 className="font-headline text-xl font-black text-white">
         Friend Activity
       </h2>
-      <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+      <CardCarousel>
         {PLACEHOLDER_ITEMS.map((item) => (
           <div
             key={item.id}
-            className="group relative aspect-square w-[160px] shrink-0 snap-start"
+            className="group relative aspect-square w-[180px] shrink-0 snap-center lg:w-[200px]"
           >
-            <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#121214]">
+            <div className="relative h-full w-full overflow-hidden bg-[#121214]">
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
                 <span className="font-headline text-4xl font-bold text-on-surface-variant opacity-30">
                   💿
@@ -54,7 +55,7 @@ export const FriendActivityList = () => {
             </div>
           </div>
         ))}
-      </div>
+      </CardCarousel>
     </section>
   );
 };

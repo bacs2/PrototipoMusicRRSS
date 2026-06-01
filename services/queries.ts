@@ -13,7 +13,7 @@ export type FeedItem = {
 
 export const getFeedReviews = async (userId?: string) => {
   if (!userId) {
-    return { items: [], message: "Configura DEMO_USER_ID para ver el feed." };
+    return { items: [], message: "No se pudo identificar al usuario." };
   }
 
   const supabase = supabaseServer();
@@ -45,7 +45,7 @@ export const getFeedReviews = async (userId?: string) => {
 
       return {
         id: review.id,
-        username: review.usuario?.username ?? "usuario",
+        username: review.usuario?.[0]?.username ?? "usuario",
         itemType: review.item_type,
         itemTitle,
         rating: review.rating,
@@ -448,15 +448,15 @@ export const searchItems = async (term: string): Promise<SearchResults> => {
       titulo: a.titulo,
       cover_url: a.cover_url,
       fecha_lanzamiento: a.fecha_lanzamiento,
-      artista_nombre: (a.Artistas as { nombre: string } | null)?.nombre ?? null,
+      artista_nombre: (a.Artistas as { nombre: string }[])?.[0]?.nombre ?? null,
     })) ?? [];
   const songs =
     songsRes.data?.map((s) => ({
       id: s.id,
       titulo: s.titulo,
       duracion_ms: s.duracion_ms,
-      album_titulo: (s.Albumes as { titulo: string } | null)?.titulo ?? null,
-      artista_nombre: (s.Artistas as { nombre: string } | null)?.nombre ?? null,
+      album_titulo: (s.Albumes as { titulo: string }[])?.[0]?.titulo ?? null,
+      artista_nombre: (s.Artistas as { nombre: string }[])?.[0]?.nombre ?? null,
     })) ?? [];
 
   return { artists, albums, songs };

@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { User, Lock, LogIn, UserPlus } from "lucide-react";
 
 export default function AuthPage() {
-  const router = useRouter();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [username, setUsername] = useState("");
   const [nombre, setNombre] = useState("");
@@ -30,8 +28,9 @@ export default function AuthPage() {
         if (!res.ok) {
           setMessage({ text: data.error, error: true });
         } else {
-          router.push("/feed");
-          router.refresh();
+          localStorage.setItem("rr_username", data.username);
+          window.dispatchEvent(new Event("rr-auth-change"));
+          window.location.href = `/profile/${data.username}`;
         }
       } else {
         const res = await fetch("/api/auth/login", {
@@ -44,8 +43,9 @@ export default function AuthPage() {
         if (!res.ok) {
           setMessage({ text: data.error, error: true });
         } else {
-          router.push("/feed");
-          router.refresh();
+          localStorage.setItem("rr_username", data.username);
+          window.dispatchEvent(new Event("rr-auth-change"));
+          window.location.href = `/profile/${data.username}`;
         }
       }
     } catch {

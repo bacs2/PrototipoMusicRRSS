@@ -1,6 +1,7 @@
 "use client";
 
 import type { TrendingItem } from "../types/models";
+import { CardCarousel } from "./CardCarousel";
 
 const PLACEHOLDER_ITEMS: TrendingItem[] = [
   { id: "1", title: "Motomami", subtitle: "Rosalía", rating: 8.5, reviewCount: 234 },
@@ -17,14 +18,14 @@ export const TrendingCarousel = () => {
         <h2 className="font-headline text-2xl font-black text-white">Trending</h2>
         <span className="font-serif italic text-purple-400 text-2xl">Now</span>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory">
+      <CardCarousel>
         {PLACEHOLDER_ITEMS.map((item) => (
           <div
             key={item.id}
-            className="group relative aspect-square w-[180px] shrink-0 snap-start lg:w-[200px]"
+            className="group relative aspect-square w-[180px] shrink-0 snap-center lg:w-[200px]"
           >
-            <div className="absolute -inset-2 bg-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-            <div className="relative h-full w-full overflow-hidden rounded-xl bg-[#121214]">
+            <div className="absolute -inset-2 bg-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative h-full w-full overflow-hidden bg-[#121214]">
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
                 <span className="font-headline text-5xl font-bold text-on-surface-variant opacity-30">
                   💿
@@ -52,7 +53,7 @@ export const TrendingCarousel = () => {
             </div>
           </div>
         ))}
-      </div>
+      </CardCarousel>
     </section>
   );
 };

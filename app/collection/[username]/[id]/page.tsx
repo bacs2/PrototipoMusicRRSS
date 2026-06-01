@@ -4,8 +4,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { getCollectionPageData } from "@/services/queries";
 import type { CollectionPageData, CollectionItemDisplay } from "@/services/queries";
 import { getCurrentUserId } from "@/lib/auth";
-import { Heart, Share2, Star, Plus, Pencil } from "lucide-react";
+import { Star, Plus, Pencil } from "lucide-react";
 import { InlineAnnotationEditor } from "./InlineAnnotationEditor";
+import { CollectionHeroActions } from "./CollectionHeroActions";
 
 type Props = {
   params: Promise<{ username: string; id: string }>;
@@ -128,10 +129,7 @@ function ListHero({ data, isOwner }: { data: CollectionPageData; isOwner: boolea
           </p>
 
           <div className="flex items-center gap-4 mt-2">
-            <button className="flex items-center gap-1.5 text-zinc-400 hover:text-red-400 transition-colors text-sm">
-              <Heart className="w-4 h-4" />
-              <span>0</span>
-            </button>
+            <CollectionHeroActions collectionName={data.nombre} />
 
             <button className="rounded-full border border-white/10 bg-white/5 backdrop-blur px-5 py-2 text-sm text-zinc-300 hover:bg-white/10 transition-all">
               <Plus className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
@@ -162,14 +160,18 @@ function ListHero({ data, isOwner }: { data: CollectionPageData; isOwner: boolea
   );
 }
 
+import { CollectionActions } from "./CollectionActions";
+
 function ControlsBar({
   currentPage,
   totalPages,
   basePath,
+  collectionName,
 }: {
   currentPage: number;
   totalPages: number;
   basePath: string;
+  collectionName: string;
 }) {
   if (totalPages <= 1) return null;
 
@@ -197,10 +199,7 @@ function ControlsBar({
         })}
       </div>
 
-      <button className="flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 transition-colors text-sm">
-        <Share2 className="w-4 h-4" />
-        <span className="hidden sm:inline">Share</span>
-      </button>
+      <CollectionActions collectionName={collectionName} />
     </div>
   );
 }
@@ -347,6 +346,7 @@ export default async function CollectionPage({ params, searchParams }: Props) {
                 currentPage={currentPage}
                 totalPages={totalPages}
                 basePath={basePath}
+                collectionName={data.nombre}
               />
             )}
 

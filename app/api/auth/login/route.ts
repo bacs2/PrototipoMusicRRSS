@@ -13,7 +13,7 @@ export async function POST(request: Request) {
 
   const { data: user } = await supabase
     .from("Datos_usuario")
-    .select("id, password_hash")
+    .select("id, username, password_hash")
     .eq("username", username)
     .maybeSingle();
 
@@ -27,5 +27,5 @@ export async function POST(request: Request) {
 
   await setSessionCookie(user.id);
 
-  return NextResponse.json({ success: true, userId: user.id });
+  return NextResponse.json({ success: true, userId: user.id, username: user.username });
 }

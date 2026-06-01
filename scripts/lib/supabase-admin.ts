@@ -53,12 +53,12 @@ export async function insertArtist(
 
   const { data, error } = await getClient()
     .from("Artistas")
-    .insert(artista)
+    .insert(artista as any)
     .select("id")
     .single();
 
-  if (error) throw new Error(`Error al insertar artista: ${error.message}`);
-  return data.id;
+  if (error || !data) throw new Error(`Error al insertar artista: ${error?.message ?? "desconocido"}`);
+  return (data as { id: string }).id;
 }
 
 export async function insertAlbum(
@@ -69,12 +69,12 @@ export async function insertAlbum(
 
   const { data, error } = await getClient()
     .from("Albumes")
-    .insert(album)
+    .insert(album as any)
     .select("id")
     .single();
 
-  if (error) throw new Error(`Error al insertar album: ${error.message}`);
-  return data.id;
+  if (error || !data) throw new Error(`Error al insertar album: ${error?.message ?? "desconocido"}`);
+  return (data as { id: string }).id;
 }
 
 export async function insertTracks(
@@ -97,7 +97,7 @@ export async function insertTracks(
   const toInsert = tracks.filter((t) => !existingMbids.has(t.mbid));
   if (toInsert.length === 0) return 0;
 
-  const { error } = await getClient().from("Canciones").insert(toInsert);
+  const { error } = await getClient().from("Canciones").insert(toInsert as any);
   if (error) throw new Error(`Error al insertar tracks: ${error.message}`);
   return toInsert.length;
 }

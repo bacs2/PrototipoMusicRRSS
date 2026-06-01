@@ -8,9 +8,10 @@ const fontFile = path.join(process.cwd(), "public", "SpaceGrotesk-Regular.ttf");
 
 export async function GET(
   _request: Request,
-  { params }: { params: { reviewId: string } }
+  { params }: { params: Promise<{ reviewId: string }> }
 ) {
-  const data = await getReviewShareData(params.reviewId);
+  const { reviewId } = await params;
+  const data = await getReviewShareData(reviewId);
   if (!data) {
     return NextResponse.json({ error: "Review not found" }, { status: 404 });
   }

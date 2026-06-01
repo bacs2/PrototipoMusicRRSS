@@ -60,3 +60,12 @@ body {
   letter-spacing: 0.2em;
   color: var(--color-on-surface-variant);
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -2,29 +2,85 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Bell, User, Sun, Moon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Bell, User, Sun, Moon, LogOut } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
 
-const NAV_LINKS = [
-  { name: "Feed", href: "/feed" },
-  { name: "Explore", href: "/explore" },
-  { name: "Lists", href: "/lists" },
-  { name: "Artists", href: "/artists" },
-  { name: "Biblioteca", href: "/library" },
-  { name: "Perfil", href: "/profile/demo" },
-];
+type UserInfo = {
+  id: string;
+  username: string;
+  nombre: string | null;
+  avatar_url: string | null;
+} | null;
 
 export default function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
+  const [user, setUser] = useState<UserInfo>(null);
+
+  const syncUser = () => {
+    const storedUsername = localStorage.getItem("rr_username");
+
+    // Si no hay username guardado, mostrar como no logueado
+    if (!storedUsername) {
+      setUser(null);
+    }
+
+    // Hacer fetch para obtener datos completos del usuario
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem("rr_username", data.user.username);
+        } else {
+          // Solo limpiar si NO hay username en localStorage
+          // (evita race condition: cookie no lista aún)
+          if (!localStorage.getItem("rr_username")) {
+            setUser(null);
+            localStorage.removeItem("rr_username");
+          }
+        }
+      })
+      .catch(() => {
+        // Error de red: mantener usuario de localStorage si existe
+        if (!localStorage.getItem("rr_username")) {
+          setUser(null);
+          localStorage.removeItem("rr_username");
+        }
+      });
+  };
+
+  useEffect(() => {
+    syncUser();
+    window.addEventListener("rr-auth-change", syncUser);
+    return () => window.removeEventListener("rr-auth-change", syncUser);
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    localStorage.removeItem("rr_username");
+    window.dispatchEvent(new Event("rr-auth-change"));
+    setUser(null);
+    router.push("/auth");
+    router.refresh();
+  };
+
+  const navLinks = [
+    { name: "Feed", href: "/feed" },
+    { name: "Biblioteca", href: "/library" },
+    user
+      ? { name: "Perfil", href: `/profile/${user.username}` }
+      : { name: "Iniciar sesión", href: "/auth" },
+  ];
 
   return (
     <nav className="w-full h-20 px-8 flex items-center justify-between bg-background/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="flex-1" />
 
       <ul className="flex items-center gap-8 flex-1 justify-center">
-        {NAV_LINKS.map((link) => {
+        {navLinks.map((link) => {
           const isActive = pathname === link.href;
 
           return (
@@ -83,12 +139,39 @@ export default function TopNav() {
           <span className="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full border border-background" />
         </button>
 
-        <Link
-          href="/auth"
-          className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden"
-        >
-          <User className="w-4 h-4 text-on-surface-variant" />
-        </Link>
+        {user ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-on-surface">{user.nombre ?? user.username}</span>
+            <Link
+              href={`/profile/${user.username}`}
+              className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden"
+            >
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-4 h-4 text-on-surface-variant" />
+              )}
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-on-surface-variant hover:text-on-surface transition-colors"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/auth"
+            className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden"
+          >
+            <User className="w-4 h-4 text-on-surface-variant" />
+          </Link>
+        )}
       </div>
     </nav>
   );
