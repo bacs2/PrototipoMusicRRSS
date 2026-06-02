@@ -383,6 +383,131 @@ const getItemTitle = async (type: ItemType, id: string) => {
   return data?.titulo ?? "Cancion";
 };
 
+export type GenreCount = {
+  genre: string;
+  count: number;
+};
+
+export const getUserTopGenres = async (userId: string, limit = 6): Promise<GenreCount[]> => {
+  const supabase = supabaseServer();
+
+  const { data: reviews } = await supabase
+    .from("Resenas_de_usuario")
+    .select("item_type, item_id")
+    .eq("usuario_id", userId);
+
+  if (!reviews || reviews.length === 0) return [];
+
+  const albumIds = reviews.filter((r) => r.item_type === "album").map((r) => r.item_id);
+  const artistIds = reviews.filter((r) => r.item_type === "artista").map((r) => r.item_id);
+  const songIds = reviews.filter((r) => r.item_type === "cancion").map((r) => r.item_id);
+
+  const [albumsRes, artistsRes, songsRes] = await Promise.all([
+    albumIds.length > 0
+      ? supabase.from("Albumes").select("generos").in("id", albumIds)
+      : Promise.resolve({ data: [] as { generos: string[] | null }[] }),
+    artistIds.length > 0
+      ? supabase.from("Artistas").select("generos").in("id", artistIds)
+      : Promise.resolve({ data: [] as { generos: string[] | null }[] }),
+    songIds.length > 0
+      ? supabase.from("Canciones").select("album_id").in("id", songIds)
+      : Promise.resolve({ data: [] as { album_id: string | null }[] }),
+  ]);
+
+  const songAlbumIds = (songsRes.data ?? [])
+    .map((s) => s.album_id)
+    .filter((id): id is string => id !== null);
+
+  const songAlbumsRes =
+    songAlbumIds.length > 0
+      ? await supabase.from("Albumes").select("generos").in("id", songAlbumIds)
+      : { data: [] as { generos: string[] | null }[] };
+
+  const freqMap = new Map<string, number>();
+  const addGenres = (rows: { generos: string[] | null }[] | null) => {
+    for (const row of rows ?? []) {
+      for (const g of row.generos ?? []) {
+        if (g) freqMap.set(g, (freqMap.get(g) ?? 0) + 1);
+      }
+    }
+  };
+
+  addGenres(albumsRes.data as { generos: string[] | null }[]);
+  addGenres(artistsRes.data as { generos: string[] | null }[]);
+  addGenres(songAlbumsRes.data as { generos: string[] | null }[]);
+
+  return [...freqMap.entries()]
+    .map(([genre, count]) => ({ genre, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+};
+
+export type RatingBucket = {
+  displayValue: number; // 0.5 – 5 in 0.5 steps
+  dbValue: number;      // 1 – 10
+  count: number;
+};
+
+export const getUserRatingDistribution = async (userId: string): Promise<RatingBucket[]> => {
+  const supabase = supabaseServer();
+
+  const { data: reviews } = await supabase
+    .from("Resenas_de_usuario")
+    .select("rating")
+    .eq("usuario_id", userId);
+
+  const countMap = new Map<number, number>();
+  for (const r of reviews ?? []) {
+    const v = Number(r.rating);
+    countMap.set(v, (countMap.get(v) ?? 0) + 1);
+  }
+
+  // Build all 10 buckets from high to low (5★ first)
+  return Array.from({ length: 10 }, (_, i) => {
+    const dbValue = 10 - i;
+    return {
+      displayValue: dbValue / 2,
+      dbValue,
+      count: countMap.get(dbValue) ?? 0,
+    };
+  });
+};
+
+export type ActivityDay = {
+  date: string;
+  count: number;
+};
+
+export const getUserActivityHeatmap = async (userId: string): Promise<ActivityDay[]> => {
+  const supabase = supabaseServer();
+
+  const since = new Date();
+  since.setFullYear(since.getFullYear() - 1);
+
+  const { data: reviews } = await supabase
+    .from("Resenas_de_usuario")
+    .select("created_at")
+    .eq("usuario_id", userId)
+    .gte("created_at", since.toISOString());
+
+  const countMap = new Map<string, number>();
+  for (const review of reviews ?? []) {
+    const date = review.created_at.slice(0, 10);
+    countMap.set(date, (countMap.get(date) ?? 0) + 1);
+  }
+
+  const days: ActivityDay[] = [];
+  const today = new Date();
+  for (let i = 364; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    days.push({ date: dateStr, count: countMap.get(dateStr) ?? 0 });
+  }
+
+  return days;
+};
+
 export type SearchResultItem = {
   id: string;
   titulo: string;
