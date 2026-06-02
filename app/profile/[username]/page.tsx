@@ -2,10 +2,16 @@ import Link from "next/link";
 import { AppShell } from "../../../components/AppShell";
 import { EmptyState } from "../../../components/EmptyState";
 import { MediaCard } from "../../../components/MediaCard";
+import { ActivityHeatmap } from "../../../components/ActivityHeatmap";
+import { RatingDistribution } from "../../../components/RatingDistribution";
+import { TopGenres } from "../../../components/TopGenres";
 import {
   getProfileByUsername,
   getUserTopAlbums,
   getUserStats,
+  getUserActivityHeatmap,
+  getUserRatingDistribution,
+  getUserTopGenres,
 } from "../../../services/queries";
 import { Star } from "lucide-react";
 import { ProfileHeroClient } from "./ProfileHeroClient";
@@ -211,9 +217,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     );
   }
 
-  const [topAlbums, stats] = await Promise.all([
+  const [topAlbums, stats, activityDays, ratingBuckets, topGenres] = await Promise.all([
     getUserTopAlbums(profile.id, 8),
     getUserStats(profile.id),
+    getUserActivityHeatmap(profile.id),
+    getUserRatingDistribution(profile.id),
+    getUserTopGenres(profile.id),
   ]);
 
   return (
@@ -221,6 +230,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       <div className="space-y-10">
         <ProfileHeroClient profile={profile} />
         <StatsBar stats={stats} />
+        <ActivityHeatmap days={activityDays} totalReviews={stats.reviews} />
+        <div className="grid gap-6 md:grid-cols-2">
+          <RatingDistribution buckets={ratingBuckets} />
+          <TopGenres genres={topGenres} />
+        </div>
 
         {topAlbums.length > 0 || reviews.length > 0 ? (
           <section className="grid gap-10 lg:grid-cols-[1fr,360px]">
