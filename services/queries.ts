@@ -594,7 +594,7 @@ export type LibraryItem = {
   title: string;
   subtitle: string | null;
   imageUrl: string | null;
-  rating: number;
+  rating: number | null;
   createdAt: string;
 };
 
@@ -611,16 +611,40 @@ export const getUserRankedItems = async (
 ): Promise<LibraryItem[]> => {
   const supabase = supabaseServer();
 
+  const { data: savedItems } = await supabase
+    .from("Biblioteca_usuario")
+    .select("id, item_type, item_id, created_at")
+    .eq("usuario_id", userId)
+    .eq("item_type", itemType)
+    .order("created_at", { ascending: false });
+
+  if (!savedItems || savedItems.length === 0) return [];
+
+  const deduped = savedItems.filter(
+    (item, index, array) =>
+      array.findIndex(
+        (candidate) =>
+          candidate.item_type === item.item_type &&
+          candidate.item_id === item.item_id
+      ) === index
+  );
+
+  const itemIds = deduped.map((item) => item.item_id);
+
   const { data: reviews } = await supabase
     .from("Resenas_de_usuario")
     .select("id, rating, created_at, item_id")
     .eq("usuario_id", userId)
     .eq("item_type", itemType)
+    .in("item_id", itemIds)
     .order("created_at", { ascending: false });
 
-  if (!reviews || reviews.length === 0) return [];
-
-  const itemIds = reviews.map((r) => r.item_id);
+  const ratingMap = new Map<string, number>();
+  for (const review of reviews ?? []) {
+    if (!ratingMap.has(review.item_id)) {
+      ratingMap.set(review.item_id, review.rating);
+    }
+  }
 
   if (itemType === "album") {
     const { data: albums } = await supabase
@@ -630,21 +654,21 @@ export const getUserRankedItems = async (
 
     const albumMap = new Map((albums ?? []).map((a) => [a.id, a]));
 
-    return reviews.map((r) => {
-      const album = albumMap.get(r.item_id);
+    return deduped.map((savedItem) => {
+      const album = albumMap.get(savedItem.item_id);
       const artista = album?.Artistas as
         | { nombre: string }
         | null
         | undefined;
       return {
-        reviewId: r.id,
-        itemId: r.item_id,
+        reviewId: savedItem.id,
+        itemId: savedItem.item_id,
         itemType: "album" as ItemType,
         title: album?.titulo ?? "Álbum desconocido",
         subtitle: artista?.nombre ?? null,
         imageUrl: album?.cover_url ?? null,
-        rating: r.rating,
-        createdAt: r.created_at,
+        rating: ratingMap.get(savedItem.item_id) ?? null,
+        createdAt: savedItem.created_at,
       };
     });
   }
@@ -657,17 +681,17 @@ export const getUserRankedItems = async (
 
     const artistMap = new Map((artists ?? []).map((a) => [a.id, a]));
 
-    return reviews.map((r) => {
-      const artist = artistMap.get(r.item_id);
+    return deduped.map((savedItem) => {
+      const artist = artistMap.get(savedItem.item_id);
       return {
-        reviewId: r.id,
-        itemId: r.item_id,
+        reviewId: savedItem.id,
+        itemId: savedItem.item_id,
         itemType: "artista" as ItemType,
         title: artist?.nombre ?? "Artista desconocido",
         subtitle: artist?.generos?.join(", ") ?? null,
         imageUrl: artist?.avatar_url ?? null,
-        rating: r.rating,
-        createdAt: r.created_at,
+        rating: ratingMap.get(savedItem.item_id) ?? null,
+        createdAt: savedItem.created_at,
       };
     });
   }
@@ -681,8 +705,8 @@ export const getUserRankedItems = async (
 
   const songMap = new Map((songs ?? []).map((s) => [s.id, s]));
 
-  return reviews.map((r) => {
-    const song = songMap.get(r.item_id);
+  return deduped.map((savedItem) => {
+    const song = songMap.get(savedItem.item_id);
     const artista = song?.Artistas as
       | { nombre: string }
       | null
@@ -693,14 +717,14 @@ export const getUserRankedItems = async (
       | undefined;
     const subtitleParts = [artista?.nombre, album?.titulo].filter(Boolean);
     return {
-      reviewId: r.id,
-      itemId: r.item_id,
+      reviewId: savedItem.id,
+      itemId: savedItem.item_id,
       itemType: "cancion" as ItemType,
       title: song?.titulo ?? "Canción desconocida",
       subtitle: subtitleParts.length > 0 ? subtitleParts.join(" · ") : null,
       imageUrl: album?.cover_url ?? null,
-      rating: r.rating,
-      createdAt: r.created_at,
+      rating: ratingMap.get(savedItem.item_id) ?? null,
+      createdAt: savedItem.created_at,
     };
   });
 };
