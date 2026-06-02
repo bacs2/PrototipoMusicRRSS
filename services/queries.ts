@@ -547,7 +547,7 @@ export const searchItems = async (term: string): Promise<SearchResults> => {
   const [artistsRes, albumsRes, songsRes] = await Promise.all([
     supabase
       .from("Artistas")
-      .select("id, nombre, avatar_url, generos")
+      .select("id, nombre, generos, avatar_url")
       .ilike("nombre", likePattern)
       .limit(20),
     supabase
@@ -652,7 +652,7 @@ export const getUserRankedItems = async (
   if (itemType === "artista") {
     const { data: artists } = await supabase
       .from("Artistas")
-      .select("id, nombre, avatar_url, generos")
+      .select("id, nombre, generos, avatar_url")
       .in("id", itemIds);
 
     const artistMap = new Map((artists ?? []).map((a) => [a.id, a]));
@@ -832,7 +832,7 @@ export async function getCollectionPageData(
     byType.artista.length > 0
       ? supabase
           .from("Artistas")
-          .select("id, nombre, avatar_url, generos")
+          .select("id, nombre, generos, avatar_url")
           .in("id", byType.artista)
       : Promise.resolve({ data: [] }),
     byType.album.length > 0
