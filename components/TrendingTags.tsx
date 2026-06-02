@@ -19,7 +19,7 @@ export const TrendingTags = () => {
         {TAGS.map((tag) => (
           <button
             key={tag}
-            className="rounded-full border border-white/10 bg-[#121214] px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-purple-500 hover:text-white"
+            className="rounded-full border border-outline-variant bg-surface-container px-3 py-1.5 text-xs text-on-surface-variant transition-colors hover:border-primary hover:text-on-surface"
           >
             #{tag}
           </button>

@@ -69,7 +69,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div className="mb-6 flex rounded-xl bg-[#121214] p-1">
+        <div className="mb-6 flex rounded-xl bg-surface-container p-1">
           <button
             onClick={() => setMode("login")}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
@@ -106,7 +106,7 @@ export default function AuthPage() {
                 placeholder="tu_username"
                 required
                 minLength={3}
-                className="w-full rounded-xl bg-[#121214] py-3 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:ring-2 focus:ring-primary/50"
+                className="w-full rounded-xl bg-surface-container py-3 pl-10 pr-4 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/50"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function AuthPage() {
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
                   placeholder="Tu nombre"
-                  className="w-full rounded-xl bg-[#121214] py-3 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-xl bg-surface-container py-3 pl-10 pr-4 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/50"
                 />
               </div>
             </div>
@@ -138,7 +138,7 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 required
                 minLength={4}
-                className="w-full rounded-xl bg-[#121214] py-3 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-zinc-600 focus:ring-2 focus:ring-primary/50"
+                className="w-full rounded-xl bg-surface-container py-3 pl-10 pr-4 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/50"
               />
             </div>
           </div>

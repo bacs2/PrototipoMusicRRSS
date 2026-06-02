@@ -14,7 +14,7 @@ const PLACEHOLDER_ITEMS: FriendActivityItem[] = [
 export const FriendActivityList = () => {
   return (
     <section className="space-y-4">
-      <h2 className="font-headline text-xl font-black text-white">
+      <h2 className="font-headline text-xl font-black text-on-surface">
         Friend Activity
       </h2>
       <CardCarousel>
@@ -23,7 +23,7 @@ export const FriendActivityList = () => {
             key={item.id}
             className="group relative aspect-square w-[180px] shrink-0 snap-center lg:w-[200px]"
           >
-            <div className="relative h-full w-full overflow-hidden bg-[#121214]">
+            <div className="relative h-full w-full overflow-hidden bg-surface-container">
               <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-surface-container-high to-surface-container-highest">
                 <span className="font-headline text-4xl font-bold text-on-surface-variant opacity-30">
                   💿
@@ -39,10 +39,10 @@ export const FriendActivityList = () => {
                   <img
                     src={item.userAvatar}
                     alt={item.userName}
-                    className="h-8 w-8 rounded-full border-2 border-[#121214] object-cover"
+                    className="h-8 w-8 rounded-full border-2 border-surface-container-low object-cover"
                   />
                 ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#121214] bg-purple-600 text-[10px] font-bold text-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface-container-low bg-purple-600 text-[10px] font-bold text-white">
                     {item.userName.charAt(0).toUpperCase()}
                   </div>
                 )}

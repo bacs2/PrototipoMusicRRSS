@@ -61,7 +61,7 @@ export const SuggestedUsers = () => {
                 href={`/profile/${user.username}`}
                 className="min-w-0 flex-1"
               >
-                <p className="truncate text-sm font-semibold text-white">
+                <p className="truncate text-sm font-semibold text-on-surface">
                   {user.name ?? user.username}
                 </p>
                 <p className="truncate text-xs text-on-surface-variant">
@@ -72,7 +72,7 @@ export const SuggestedUsers = () => {
                 onClick={() => toggleFollow(user.id)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-all ${
                   isFollowing
-                    ? "border border-white/10 bg-transparent text-on-surface-variant hover:border-red-500/50 hover:text-red-400"
+                    ? "border border-outline-variant bg-transparent text-on-surface-variant hover:border-red-500/50 hover:text-red-400"
                     : "bg-gradient-to-br from-primary to-primary-dim text-white hover:opacity-90"
                 }`}
               >
