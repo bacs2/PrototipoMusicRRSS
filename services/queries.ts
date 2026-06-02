@@ -16,7 +16,7 @@ export const getFeedReviews = async (userId?: string) => {
     return { items: [], message: "No se pudo identificar al usuario." };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: following } = await supabase
     .from("Seguidores_por_usuario")
@@ -59,7 +59,7 @@ export const getFeedReviews = async (userId?: string) => {
 };
 
 export const getItemDetails = async (type: ItemType, id: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   if (type === "album") {
     const { data } = await supabase
@@ -91,7 +91,7 @@ export const getItemDetails = async (type: ItemType, id: string) => {
 };
 
 export const getAlbumTracks = async (albumId: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data } = await supabase
     .from("Canciones")
     .select("id, titulo, duracion_ms, posicion")
@@ -102,7 +102,7 @@ export const getAlbumTracks = async (albumId: string) => {
 };
 
 export const getArtistAlbums = async (artistId: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data } = await supabase
     .from("Albumes")
     .select("id, titulo, cover_url, fecha_lanzamiento, generos")
@@ -125,7 +125,7 @@ export const getArtistTopRatedAlbums = async (
   artistId: string,
   limit = 5
 ): Promise<TopRatedAlbum[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: albums } = await supabase
     .from("Albumes")
@@ -167,7 +167,7 @@ export const getArtistTopRatedAlbums = async (
 };
 
 export const getItemReviews = async (type: ItemType, id: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data } = await supabase
     .from("Resenas_de_usuario")
     .select("id, rating, comentario, created_at, usuario:Datos_usuario(username)")
@@ -190,7 +190,7 @@ export type ProfileReview = {
 };
 
 export const getProfileByUsername = async (username: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: profile } = await supabase
     .from("Datos_usuario")
     .select("id, username, nombre, bio, avatar_url")
@@ -239,7 +239,7 @@ export const getUserTopAlbums = async (
   userId: string,
   limit = 8
 ): Promise<UserTopAlbum[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: albumReviews } = await supabase
     .from("Resenas_de_usuario")
@@ -288,7 +288,7 @@ export type UserStats = {
 };
 
 export const getUserStats = async (userId: string): Promise<UserStats> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { count: albumReviewsCount } = await supabase
     .from("Resenas_de_usuario")
@@ -329,7 +329,7 @@ export const getLibrarySummary = async (userId?: string) => {
     return { collections: 0, wishlist: 0, history: 0 };
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const [{ count: collections }, { count: wishlist }, { count: history }] =
     await Promise.all([
@@ -355,7 +355,7 @@ export const getLibrarySummary = async (userId?: string) => {
 };
 
 const getItemTitle = async (type: ItemType, id: string) => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   if (type === "album") {
     const { data } = await supabase
@@ -389,7 +389,7 @@ export type GenreCount = {
 };
 
 export const getUserTopGenres = async (userId: string, limit = 6): Promise<GenreCount[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: reviews } = await supabase
     .from("Resenas_de_usuario")
@@ -449,7 +449,7 @@ export type RatingBucket = {
 };
 
 export const getUserRatingDistribution = async (userId: string): Promise<RatingBucket[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: reviews } = await supabase
     .from("Resenas_de_usuario")
@@ -479,7 +479,7 @@ export type ActivityDay = {
 };
 
 export const getUserActivityHeatmap = async (userId: string): Promise<ActivityDay[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const since = new Date();
   since.setFullYear(since.getFullYear() - 1);
@@ -534,7 +534,7 @@ export type SearchResults = {
 };
 
 export const searchItems = async (term: string): Promise<SearchResults> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const sanitized = term.trim().replace(/[%_]/g, "");
 
@@ -609,7 +609,7 @@ export const getUserRankedItems = async (
   userId: string,
   itemType: ItemType
 ): Promise<LibraryItem[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: reviews } = await supabase
     .from("Resenas_de_usuario")
@@ -708,7 +708,7 @@ export const getUserRankedItems = async (
 export const getUserCollections = async (
   userId: string
 ): Promise<UserCollection[]> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data } = await supabase
     .from("Coleccion_o_Lista")
     .select("id, nombre, descripcion, items")
@@ -779,7 +779,7 @@ export async function getCollectionPageData(
   username: string,
   collectionId: string
 ): Promise<CollectionPageData | null> {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: creator, error: creatorError } = await supabase
     .from("Datos_usuario")

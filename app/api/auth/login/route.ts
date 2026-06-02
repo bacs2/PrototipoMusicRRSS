@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "../../../../lib/supabase/server";
-import { verifyPassword, setSessionCookie } from "../../../../lib/auth-server";
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
@@ -9,23 +8,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Username y contraseña requeridos." }, { status: 400 });
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
+  const email = `${username}@raterecord.app`;
 
-  const { data: user } = await supabase
-    .from("Datos_usuario")
-    .select("id, username, password_hash")
-    .eq("username", username)
-    .maybeSingle();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (!user || !user.password_hash) {
+  if (error || !data.user) {
     return NextResponse.json({ error: "Usuario o contraseña incorrectos." }, { status: 401 });
   }
 
-  if (!verifyPassword(password, user.password_hash)) {
-    return NextResponse.json({ error: "Usuario o contraseña incorrectos." }, { status: 401 });
-  }
-
-  await setSessionCookie(user.id);
-
-  return NextResponse.json({ success: true, userId: user.id, username: user.username });
+  return NextResponse.json({ success: true, userId: data.user.id, username });
 }

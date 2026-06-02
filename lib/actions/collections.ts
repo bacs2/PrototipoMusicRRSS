@@ -20,7 +20,7 @@ export async function createCollection(
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No autenticado");
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data, error } = await supabase
     .from("Coleccion_o_Lista")
@@ -49,7 +49,7 @@ export async function updateCollection(
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No autenticado");
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: existing } = await supabase
     .from("Coleccion_o_Lista")
@@ -86,7 +86,7 @@ export async function updateItemAnnotation(
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No autenticado");
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: collection } = await supabase
     .from("Coleccion_o_Lista")
@@ -121,7 +121,7 @@ export async function deleteCollection(id: string) {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No autenticado");
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: existing } = await supabase
     .from("Coleccion_o_Lista")

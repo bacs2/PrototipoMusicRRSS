@@ -19,7 +19,7 @@ export default async function EditCollectionPage({ params }: Props) {
   }
 
   // Fetch the creator to check ownership
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
   const { data: creator } = await supabase
     .from("Datos_usuario")
     .select("id")

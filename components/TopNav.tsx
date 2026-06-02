@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Search, Bell, User, Sun, Moon, LogOut } from "lucide-react";
+import { Search, Bell, User, Sun, Moon, LogOut, Shield } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
 
 type UserInfo = {
@@ -11,6 +11,7 @@ type UserInfo = {
   username: string;
   nombre: string | null;
   avatar_url: string | null;
+  is_admin?: boolean;
 } | null;
 
 export default function TopNav() {
@@ -73,6 +74,7 @@ export default function TopNav() {
     user
       ? { name: "Perfil", href: `/profile/${user.username}` }
       : { name: "Iniciar sesión", href: "/auth" },
+    ...(user?.is_admin ? [{ name: "Admin", href: "/admin" }] : []),
   ];
 
   return (
@@ -142,18 +144,18 @@ export default function TopNav() {
         {user ? (
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-on-surface">{user.nombre ?? user.username}</span>
-            <Link
-              href={`/profile/${user.username}`}
-              className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden"
-            >
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.username}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <User className="w-4 h-4 text-on-surface-variant" />
+            <Link href={`/profile/${user.username}`} className="relative shrink-0">
+              <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center border border-primary/30 hover:border-primary transition-colors overflow-hidden">
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.username} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-4 h-4 text-on-surface-variant" />
+                )}
+              </div>
+              {user.is_admin && (
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-white ring-2 ring-background" title="Admin">
+                  <Shield className="h-2 w-2" />
+                </span>
               )}
             </Link>
             <button

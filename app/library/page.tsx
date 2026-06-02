@@ -94,7 +94,7 @@ export default async function LibraryPage({
     );
   }
 
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: userData } = await supabase
     .from("Datos_usuario")

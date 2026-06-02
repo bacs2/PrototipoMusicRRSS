@@ -4,7 +4,7 @@ import type { ReviewShareData } from "../types/models";
 export const getReviewShareData = async (
   reviewId: string
 ): Promise<ReviewShareData | null> => {
-  const supabase = supabaseServer();
+  const supabase = await supabaseServer();
 
   const { data: review, error } = await supabase
     .from("Resenas_de_usuario")
