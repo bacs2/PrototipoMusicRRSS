@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { supabaseServer } from "../supabase/server";
+import { supabaseAdmin } from "../supabase/admin";
 import { getCurrentUserId } from "../auth";
 import type { ItemType } from "../../types/models";
 
@@ -15,6 +16,7 @@ type CollectionItemInput = {
 export async function createCollection(
   nombre: string,
   descripcion: string | null,
+  cover_url: string | null,
   items: CollectionItemInput[]
 ) {
   const userId = await getCurrentUserId();
@@ -22,12 +24,14 @@ export async function createCollection(
 
   const supabase = await supabaseServer();
 
+
   const { data, error } = await supabase
     .from("Coleccion_o_Lista")
     .insert({
       usuario_id: userId,
       nombre,
       descripcion,
+      cover_url,
       items: items as unknown as Record<string, unknown>[],
     })
     .select()
@@ -43,6 +47,7 @@ export async function updateCollection(
   updates: {
     nombre?: string;
     descripcion?: string | null;
+    cover_url?: string | null;
     items?: CollectionItemInput[];
   }
 ) {
@@ -50,6 +55,7 @@ export async function updateCollection(
   if (!userId) throw new Error("No autenticado");
 
   const supabase = await supabaseServer();
+
 
   const { data: existing } = await supabase
     .from("Coleccion_o_Lista")
@@ -88,6 +94,7 @@ export async function updateItemAnnotation(
 
   const supabase = await supabaseServer();
 
+
   const { data: collection } = await supabase
     .from("Coleccion_o_Lista")
     .select("*")
@@ -122,6 +129,7 @@ export async function deleteCollection(id: string) {
   if (!userId) throw new Error("No autenticado");
 
   const supabase = await supabaseServer();
+
 
   const { data: existing } = await supabase
     .from("Coleccion_o_Lista")

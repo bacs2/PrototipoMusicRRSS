@@ -3,8 +3,9 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createCollection, searchCollectionItems } from "@/lib/actions/collections";
+import { uploadCollectionCover } from "@/lib/actions/uploads";
 import type { ItemType } from "@/types/models";
-import { Search, X, Plus, Loader2 } from "lucide-react";
+import { Search, X, Plus, Loader2, Upload, ImageIcon } from "lucide-react";
 
 type PickedItem = {
   item_type: ItemType;
@@ -101,6 +102,7 @@ export function CreateCollectionModal({
       const result = await createCollection(
         nombre.trim(),
         descripcion.trim() || null,
+        null,
         picked.map((p) => ({
           item_type: p.item_type,
           item_id: p.item_id,

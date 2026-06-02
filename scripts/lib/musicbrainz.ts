@@ -47,11 +47,20 @@ async function rateLimitedFetch(url: string): Promise<Response> {
   throw new Error("Max retries alcanzado");
 }
 
+function normalizeDate(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const parts = raw.split("-");
+  if (parts.length === 1) return `${raw}-01-01`;
+  if (parts.length === 2) return `${raw}-01`;
+  return raw;
+}
+
 function getFirstDate(rg: {
   "first-release-date"?: string | null;
   releases?: { date?: string | null }[];
 }): string | null {
-  return rg["first-release-date"] ?? rg.releases?.[0]?.date ?? null;
+  const raw = rg["first-release-date"] ?? rg.releases?.[0]?.date ?? null;
+  return normalizeDate(raw);
 }
 
 function extractTags(entity: { tags?: { name: string }[] }): string[] {

@@ -3,7 +3,7 @@ import { AppShell } from "../../components/AppShell";
 import { EmptyState } from "../../components/EmptyState";
 import { StatCard } from "../../components/StatCard";
 import { SectionHeader } from "../../components/SectionHeader";
-import { LibraryCard } from "../../components/LibraryCard";
+import { LibraryListItem } from "../../components/LibraryListItem";
 import { supabaseServer } from "../../lib/supabase/server";
 import {
   getUserRankedItems,
@@ -30,9 +30,9 @@ type LibraryPageProps = {
 
 function ItemsGrid({ items }: { items: LibraryItem[] }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+    <div className="space-y-6">
       {items.map((item) => (
-        <LibraryCard key={item.reviewId} item={item} />
+        <LibraryListItem key={item.reviewId} item={item} />
       ))}
     </div>
   );
@@ -105,19 +105,19 @@ export default async function LibraryPage({
 
   const [albumCount, songCount, artistCount, listCount] = await Promise.all([
     supabase
-      .from("Resenas_de_usuario")
+      .from("Biblioteca_usuario")
       .select("id", { count: "exact", head: true })
       .eq("usuario_id", userId)
       .eq("item_type", "album")
       .then((r) => r.count ?? 0),
     supabase
-      .from("Resenas_de_usuario")
+      .from("Biblioteca_usuario")
       .select("id", { count: "exact", head: true })
       .eq("usuario_id", userId)
       .eq("item_type", "cancion")
       .then((r) => r.count ?? 0),
     supabase
-      .from("Resenas_de_usuario")
+      .from("Biblioteca_usuario")
       .select("id", { count: "exact", head: true })
       .eq("usuario_id", userId)
       .eq("item_type", "artista")
@@ -150,7 +150,7 @@ export default async function LibraryPage({
         <SectionHeader
           eyebrow="Biblioteca"
           title="Tu colección"
-          description="Todo lo que has rankeado en un solo lugar."
+          description="Todo lo que has guardado en un solo lugar."
         />
 
         <div className="grid gap-4 md:grid-cols-4">

@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^set -a && source \\.env && set \\+a && node <<'NODE'\nconst \\{ createClient \\} = require\\('@supabase/supabase-js'\\);\nconst url = process\\.env\\.NEXT_PUBLIC_SUPABASE_URL\\?\\.replace\\(/\\\\/rest\\\\/v1\\\\/\\?\\$/, ''\\);\nconst key = process\\.env\\.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;\nconst supabase = createClient\\(url, key\\);\n\nasync function check\\(name\\) \\{\n  const \\{ data: artists, error \\} = await supabase\n    \\.from\\('Artistas'\\)\n    \\.select\\('id,nombre,mbid'\\)\n    \\.ilike\\('nombre', `%\\$\\{name\\}%`\\)\n    \\.limit\\(10\\);\n  if \\(error\\) \\{\n    console\\.log\\('error', name, error\\.message\\);\n    return;\n  \\}\n  console\\.log\\('\\\\n', name, 'artists', artists\\?\\.length \\?\\? 0\\);\n  for \\(const a of artists \\?\\? \\[\\]\\) \\{\n    const \\{ count \\} = await supabase\n      \\.from\\('Albumes'\\)\n      \\.select\\('id', \\{ count: 'exact', head: true \\}\\)\n      \\.eq\\('artista_id', a\\.id\\);\n    console\\.log\\('-', a\\.nombre, a\\.id, 'albums', count \\?\\? 0\\);\n  \\}\n\\}\n\n\\(async \\(\\) => \\{\n  await check\\('Bad Bunny'\\);\n  await check\\('Rosalia'\\);\n  await check\\('Shakira'\\);\n\\}\\)\\(\\);\nNODE$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

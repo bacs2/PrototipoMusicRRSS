@@ -74,7 +74,7 @@ export const getItemDetails = async (type: ItemType, id: string) => {
   if (type === "artista") {
     const { data } = await supabase
       .from("Artistas")
-      .select("id, nombre, generos, avatar_url, bio, metadata")
+      .select("id, mbid, nombre, generos, avatar_url, bio, metadata")
       .eq("id", id)
       .single();
 
@@ -103,13 +103,45 @@ export const getAlbumTracks = async (albumId: string) => {
 
 export const getArtistAlbums = async (artistId: string) => {
   const supabase = await supabaseServer();
+
+  const { data: artist } = await supabase
+    .from("Artistas")
+    .select("id, nombre, mbid")
+    .eq("id", artistId)
+    .single();
+
   const { data } = await supabase
     .from("Albumes")
-    .select("id, titulo, cover_url, fecha_lanzamiento, generos")
-    .eq("artista_id", artistId)
+    .select(
+      "id, titulo, cover_url, fecha_lanzamiento, generos, artista_id, metadata, Artistas(id, nombre, mbid)"
+    )
     .order("fecha_lanzamiento", { ascending: false, nullsFirst: false });
 
-  return data ?? [];
+  const artistName = artist?.nombre?.toLowerCase() ?? null;
+  const artistMbid = artist?.mbid ?? null;
+
+  return (data ?? []).filter((album) => {
+    if (album.artista_id === artistId) return true;
+
+    const albumArtist = (album.Artistas as { id?: string; nombre?: string; mbid?: string | null }[] | null | undefined)?.[0];
+    if (albumArtist?.id === artistId) return true;
+
+    if (artistName && albumArtist?.nombre?.toLowerCase() === artistName) {
+      return true;
+    }
+
+    const metadata = album.metadata as
+      | { artist_credit?: { artist_id?: string | null; name?: string | null }[] }
+      | null
+      | undefined;
+    const credits = metadata?.artist_credit ?? [];
+
+    return credits.some((credit) => {
+      if (artistMbid && credit.artist_id === artistMbid) return true;
+      if (artistName && credit.name?.toLowerCase() === artistName) return true;
+      return false;
+    });
+  });
 };
 
 export type TopRatedAlbum = {
@@ -594,7 +626,7 @@ export type LibraryItem = {
   title: string;
   subtitle: string | null;
   imageUrl: string | null;
-  rating: number;
+  rating: number | null;
   createdAt: string;
 };
 
@@ -611,16 +643,40 @@ export const getUserRankedItems = async (
 ): Promise<LibraryItem[]> => {
   const supabase = await supabaseServer();
 
+  const { data: savedItems } = await supabase
+    .from("Biblioteca_usuario")
+    .select("id, item_type, item_id, created_at")
+    .eq("usuario_id", userId)
+    .eq("item_type", itemType)
+    .order("created_at", { ascending: false });
+
+  if (!savedItems || savedItems.length === 0) return [];
+
+  const deduped = savedItems.filter(
+    (item, index, array) =>
+      array.findIndex(
+        (candidate) =>
+          candidate.item_type === item.item_type &&
+          candidate.item_id === item.item_id
+      ) === index
+  );
+
+  const itemIds = deduped.map((item) => item.item_id);
+
   const { data: reviews } = await supabase
     .from("Resenas_de_usuario")
     .select("id, rating, created_at, item_id")
     .eq("usuario_id", userId)
     .eq("item_type", itemType)
+    .in("item_id", itemIds)
     .order("created_at", { ascending: false });
 
-  if (!reviews || reviews.length === 0) return [];
-
-  const itemIds = reviews.map((r) => r.item_id);
+  const ratingMap = new Map<string, number>();
+  for (const review of reviews ?? []) {
+    if (!ratingMap.has(review.item_id)) {
+      ratingMap.set(review.item_id, review.rating);
+    }
+  }
 
   if (itemType === "album") {
     const { data: albums } = await supabase
@@ -630,21 +686,21 @@ export const getUserRankedItems = async (
 
     const albumMap = new Map((albums ?? []).map((a) => [a.id, a]));
 
-    return reviews.map((r) => {
-      const album = albumMap.get(r.item_id);
+    return deduped.map((savedItem) => {
+      const album = albumMap.get(savedItem.item_id);
       const artista = album?.Artistas as
         | { nombre: string }
         | null
         | undefined;
       return {
-        reviewId: r.id,
-        itemId: r.item_id,
+        reviewId: savedItem.id,
+        itemId: savedItem.item_id,
         itemType: "album" as ItemType,
         title: album?.titulo ?? "Álbum desconocido",
         subtitle: artista?.nombre ?? null,
         imageUrl: album?.cover_url ?? null,
-        rating: r.rating,
-        createdAt: r.created_at,
+        rating: ratingMap.get(savedItem.item_id) ?? null,
+        createdAt: savedItem.created_at,
       };
     });
   }
@@ -657,17 +713,17 @@ export const getUserRankedItems = async (
 
     const artistMap = new Map((artists ?? []).map((a) => [a.id, a]));
 
-    return reviews.map((r) => {
-      const artist = artistMap.get(r.item_id);
+    return deduped.map((savedItem) => {
+      const artist = artistMap.get(savedItem.item_id);
       return {
-        reviewId: r.id,
-        itemId: r.item_id,
+        reviewId: savedItem.id,
+        itemId: savedItem.item_id,
         itemType: "artista" as ItemType,
         title: artist?.nombre ?? "Artista desconocido",
         subtitle: artist?.generos?.join(", ") ?? null,
         imageUrl: artist?.avatar_url ?? null,
-        rating: r.rating,
-        createdAt: r.created_at,
+        rating: ratingMap.get(savedItem.item_id) ?? null,
+        createdAt: savedItem.created_at,
       };
     });
   }
@@ -681,8 +737,8 @@ export const getUserRankedItems = async (
 
   const songMap = new Map((songs ?? []).map((s) => [s.id, s]));
 
-  return reviews.map((r) => {
-    const song = songMap.get(r.item_id);
+  return deduped.map((savedItem) => {
+    const song = songMap.get(savedItem.item_id);
     const artista = song?.Artistas as
       | { nombre: string }
       | null
@@ -693,14 +749,14 @@ export const getUserRankedItems = async (
       | undefined;
     const subtitleParts = [artista?.nombre, album?.titulo].filter(Boolean);
     return {
-      reviewId: r.id,
-      itemId: r.item_id,
+      reviewId: savedItem.id,
+      itemId: savedItem.item_id,
       itemType: "cancion" as ItemType,
       title: song?.titulo ?? "Canción desconocida",
       subtitle: subtitleParts.length > 0 ? subtitleParts.join(" · ") : null,
       imageUrl: album?.cover_url ?? null,
-      rating: r.rating,
-      createdAt: r.created_at,
+      rating: ratingMap.get(savedItem.item_id) ?? null,
+      createdAt: savedItem.created_at,
     };
   });
 };
@@ -747,6 +803,7 @@ export type CollectionPageData = {
   id: string;
   nombre: string;
   descripcion: string | null;
+  cover_url: string | null;
   creador: {
     username: string;
     nombre: string | null;
@@ -818,6 +875,7 @@ export async function getCollectionPageData(
       id: collection.id,
       nombre: collection.nombre,
       descripcion: collection.descripcion,
+      cover_url: collection.cover_url ?? null,
       creador: {
         username: creator.username,
         nombre: creator.nombre,
@@ -930,6 +988,7 @@ export async function getCollectionPageData(
     id: collection.id,
     nombre: collection.nombre,
     descripcion: collection.descripcion,
+    cover_url: collection.cover_url ?? null,
     creador: {
       username: creator.username,
       nombre: creator.nombre,
@@ -938,4 +997,46 @@ export async function getCollectionPageData(
     items,
     created_at: collection.created_at,
   };
+}
+
+export type PopularCollection = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  cover_url: string | null;
+  items: unknown[];
+  created_at: string;
+  creador: {
+    username: string;
+    nombre: string | null;
+    avatar_url: string | null;
+  };
+};
+
+export async function getPopularCollections(
+  limit = 24
+): Promise<PopularCollection[]> {
+  const supabase = await supabaseServer();
+
+  const { data } = await supabase
+    .from("Coleccion_o_Lista")
+    .select(
+      "id, nombre, descripcion, cover_url, items, created_at, usuario:Datos_usuario(username, nombre, avatar_url)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map((c: Record<string, unknown>) => ({
+    id: c.id as string,
+    nombre: c.nombre as string,
+    descripcion: c.descripcion as string | null,
+    cover_url: (c.cover_url as string | null) ?? null,
+    items: c.items as unknown[],
+    created_at: c.created_at as string,
+    creador: {
+      username: (c.usuario as { username: string; nombre: string | null; avatar_url: string | null }[])?.[0]?.username ?? "usuario",
+      nombre: (c.usuario as { username: string; nombre: string | null; avatar_url: string | null }[])?.[0]?.nombre ?? null,
+      avatar_url: (c.usuario as { username: string; nombre: string | null; avatar_url: string | null }[])?.[0]?.avatar_url ?? null,
+    },
+  }));
 }
