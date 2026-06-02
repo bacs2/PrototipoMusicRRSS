@@ -74,7 +74,7 @@ export const getItemDetails = async (type: ItemType, id: string) => {
   if (type === "artista") {
     const { data } = await supabase
       .from("Artistas")
-      .select("id, nombre, generos, avatar_url, bio, metadata")
+      .select("id, mbid, nombre, generos, avatar_url, bio, metadata")
       .eq("id", id)
       .single();
 
@@ -103,13 +103,45 @@ export const getAlbumTracks = async (albumId: string) => {
 
 export const getArtistAlbums = async (artistId: string) => {
   const supabase = supabaseServer();
+
+  const { data: artist } = await supabase
+    .from("Artistas")
+    .select("id, nombre, mbid")
+    .eq("id", artistId)
+    .single();
+
   const { data } = await supabase
     .from("Albumes")
-    .select("id, titulo, cover_url, fecha_lanzamiento, generos")
-    .eq("artista_id", artistId)
+    .select(
+      "id, titulo, cover_url, fecha_lanzamiento, generos, artista_id, metadata, Artistas(id, nombre, mbid)"
+    )
     .order("fecha_lanzamiento", { ascending: false, nullsFirst: false });
 
-  return data ?? [];
+  const artistName = artist?.nombre?.toLowerCase() ?? null;
+  const artistMbid = artist?.mbid ?? null;
+
+  return (data ?? []).filter((album) => {
+    if (album.artista_id === artistId) return true;
+
+    const albumArtist = (album.Artistas as { id?: string; nombre?: string; mbid?: string | null }[] | null | undefined)?.[0];
+    if (albumArtist?.id === artistId) return true;
+
+    if (artistName && albumArtist?.nombre?.toLowerCase() === artistName) {
+      return true;
+    }
+
+    const metadata = album.metadata as
+      | { artist_credit?: { artist_id?: string | null; name?: string | null }[] }
+      | null
+      | undefined;
+    const credits = metadata?.artist_credit ?? [];
+
+    return credits.some((credit) => {
+      if (artistMbid && credit.artist_id === artistMbid) return true;
+      if (artistName && credit.name?.toLowerCase() === artistName) return true;
+      return false;
+    });
+  });
 };
 
 export type TopRatedAlbum = {
@@ -771,6 +803,7 @@ export type CollectionPageData = {
   id: string;
   nombre: string;
   descripcion: string | null;
+  cover_url: string | null;
   creador: {
     username: string;
     nombre: string | null;
@@ -842,6 +875,7 @@ export async function getCollectionPageData(
       id: collection.id,
       nombre: collection.nombre,
       descripcion: collection.descripcion,
+      cover_url: collection.cover_url ?? null,
       creador: {
         username: creator.username,
         nombre: creator.nombre,
@@ -954,6 +988,7 @@ export async function getCollectionPageData(
     id: collection.id,
     nombre: collection.nombre,
     descripcion: collection.descripcion,
+    cover_url: collection.cover_url ?? null,
     creador: {
       username: creator.username,
       nombre: creator.nombre,
@@ -962,4 +997,46 @@ export async function getCollectionPageData(
     items,
     created_at: collection.created_at,
   };
+}
+
+export type PopularCollection = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  cover_url: string | null;
+  items: unknown[];
+  created_at: string;
+  creador: {
+    username: string;
+    nombre: string | null;
+    avatar_url: string | null;
+  };
+};
+
+export async function getPopularCollections(
+  limit = 24
+): Promise<PopularCollection[]> {
+  const supabase = supabaseServer();
+
+  const { data } = await supabase
+    .from("Coleccion_o_Lista")
+    .select(
+      "id, nombre, descripcion, cover_url, items, created_at, usuario:Datos_usuario(username, nombre, avatar_url)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    nombre: c.nombre,
+    descripcion: c.descripcion,
+    cover_url: c.cover_url ?? null,
+    items: c.items as unknown[],
+    created_at: c.created_at,
+    creador: {
+      username: c.usuario?.[0]?.username ?? "usuario",
+      nombre: c.usuario?.[0]?.nombre ?? null,
+      avatar_url: c.usuario?.[0]?.avatar_url ?? null,
+    },
+  }));
 }

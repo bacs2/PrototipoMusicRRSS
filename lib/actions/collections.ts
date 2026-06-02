@@ -16,6 +16,7 @@ type CollectionItemInput = {
 export async function createCollection(
   nombre: string,
   descripcion: string | null,
+  cover_url: string | null,
   items: CollectionItemInput[]
 ) {
   const userId = await getCurrentUserId();
@@ -29,6 +30,7 @@ export async function createCollection(
       usuario_id: userId,
       nombre,
       descripcion,
+      cover_url,
       items: items as unknown as Record<string, unknown>[],
     })
     .select()
@@ -44,6 +46,7 @@ export async function updateCollection(
   updates: {
     nombre?: string;
     descripcion?: string | null;
+    cover_url?: string | null;
     items?: CollectionItemInput[];
   }
 ) {

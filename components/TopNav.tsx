@@ -69,6 +69,7 @@ export default function TopNav() {
 
   const navLinks = [
     { name: "Feed", href: "/feed" },
+    { name: "Colecciones", href: "/colecciones" },
     { name: "Biblioteca", href: "/library" },
     user
       ? { name: "Perfil", href: `/profile/${user.username}` }

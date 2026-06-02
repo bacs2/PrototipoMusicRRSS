@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
+import { LibraryListItem } from "@/components/LibraryListItem";
 import { getCollectionPageData } from "@/services/queries";
 import type { CollectionPageData, CollectionItemDisplay } from "@/services/queries";
 import { getCurrentUserId } from "@/lib/auth";
@@ -204,33 +205,6 @@ function ControlsBar({
   );
 }
 
-function ItemImage({ item, size }: { item: CollectionItemDisplay; size: string }) {
-  const href =
-    item.item_type === "album"
-      ? `/item/album/${item.item_id}`
-      : item.item_type === "artista"
-        ? `/item/artista/${item.item_id}`
-        : `/item/cancion/${item.item_id}`;
-
-  const imgClass = `${size} rounded-xl object-cover shadow-[0_4px_12px_rgba(0,0,0,0.3)] transition-shadow hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]`;
-
-  return (
-    <Link href={href} className="shrink-0 mx-auto md:mx-0">
-      {item.imageUrl ? (
-        <img src={item.imageUrl} alt={item.title} className={imgClass} />
-      ) : (
-        <div
-          className={`${size} rounded-xl bg-gradient-to-br from-surface-container-high to-surface-container-highest flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.3)]`}
-        >
-          <span className="font-headline text-3xl font-bold text-on-surface-variant/30">
-            {item.title.charAt(0)}
-          </span>
-        </div>
-      )}
-    </Link>
-  );
-}
-
 function ListItem({
   item,
   isOwner,
@@ -240,65 +214,40 @@ function ListItem({
   isOwner: boolean;
   collectionId: string;
 }) {
-  const typeLabel =
-    item.item_type === "artista"
-      ? "Artista"
-      : item.item_type === "album"
-        ? "Álbum"
-        : "Canción";
-
   return (
-    <article className="flex flex-col md:flex-row gap-6 py-8 border-b border-white/5">
-      <ItemImage item={item} size="w-32 h-32 md:w-40 md:h-40" />
+    <LibraryListItem
+      item={{
+        itemType: item.item_type,
+        itemId: item.item_id,
+        title: item.title,
+        subtitle: [item.subtitle, item.year].filter(Boolean).join(" · ") || null,
+        imageUrl: item.imageUrl,
+        rating: item.avg_rating,
+      }}
+      details={
+        item.annotation || isOwner || item.must_listen ? (
+          <div className="space-y-3 text-sm leading-relaxed text-on-surface-variant">
+            {item.annotation ? <p>{linkify(item.annotation)}</p> : null}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-[10px] uppercase tracking-widest text-on-surface-variant label-md">
-            {typeLabel}
-          </span>
-        </div>
-
-        <h3 className="font-bold text-lg truncate mt-0.5">{item.title}</h3>
-
-        {item.subtitle ? (
-          <p className="text-sm text-zinc-400 truncate">{item.subtitle}</p>
-        ) : null}
-
-        {item.year ? (
-          <span className="text-sm text-zinc-500">{item.year}</span>
-        ) : null}
-
-        {item.avg_rating !== null ? (
-          <div className="flex items-center gap-2 mt-1.5">
-            <StarDisplay rating={item.avg_rating} size="w-3 h-3" />
-            <span className="text-xs font-semibold text-primary">
-              {(item.avg_rating / 2).toFixed(1)}
-            </span>
+            {isOwner ? (
+              <InlineAnnotationEditor
+                collectionId={collectionId}
+                itemType={item.item_type}
+                itemId={item.item_id}
+                currentAnnotation={item.annotation}
+              />
+            ) : null}
           </div>
-        ) : null}
-
-        {item.annotation ? (
-          <p className="text-zinc-400 text-sm md:text-base leading-relaxed mt-3">
-            {linkify(item.annotation)}
-          </p>
-        ) : null}
-
-        {isOwner ? (
-          <InlineAnnotationEditor
-            collectionId={collectionId}
-            itemType={item.item_type}
-            itemId={item.item_id}
-            currentAnnotation={item.annotation}
-          />
-        ) : null}
-
-        {item.must_listen ? (
-          <p className="text-primary font-semibold text-sm mt-2">
+        ) : null
+      }
+      footer={
+        item.must_listen ? (
+          <p className="text-sm font-semibold text-primary">
             Must-listen: {item.must_listen}
           </p>
-        ) : null}
-      </div>
-    </article>
+        ) : null
+      }
+    />
   );
 }
 

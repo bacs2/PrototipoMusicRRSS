@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { getCurrentUserId } from "../../../../lib/auth";
 
+export const revalidate = 0;
+
 const mockRatingDistribution: RatingDistribution[] = [
   { stars: 5, count: 12, percentage: 40 },
   { stars: 4, count: 9, percentage: 30 },

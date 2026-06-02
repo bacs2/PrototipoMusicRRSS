@@ -82,8 +82,18 @@ create table if not exists "Coleccion_o_Lista" (
   -- items: array of { item_type: "artista"|"album"|"cancion", item_id: uuid, annotation?: text, must_listen?: text }
   -- Legacy format: { album_id: uuid, annotation?: text, must_listen?: text }
   items jsonb not null default '[]'::jsonb,
+  cover_url text,
   created_at timestamptz not null default now()
 );
+
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'Coleccion_o_Lista' and column_name = 'cover_url'
+  ) then
+    alter table "Coleccion_o_Lista" add column cover_url text;
+  end if;
+end $$;
 
 create table if not exists "Biblioteca_usuario" (
   id uuid primary key default gen_random_uuid(),
@@ -289,3 +299,41 @@ $$ language plpgsql security definer;
 
 grant execute on function add_posicion_column() to anon, authenticated;
 grant execute on function delete_canciones_by_album(uuid) to anon, authenticated;
+
+-- Storage: collection covers
+do $$ begin
+  insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+  values (
+    'collection-covers',
+    'collection-covers',
+    true,
+    5242880,
+    array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  )
+  on conflict (id) do nothing;
+end $$;
+
+create policy if not exists "Collection covers are publicly readable"
+  on storage.objects for select
+  using (bucket_id = 'collection-covers');
+
+create policy if not exists "Authenticated users can upload collection covers"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'collection-covers'
+    and (auth.role() = 'authenticated' or auth.role() = 'service_role')
+  );
+
+create policy if not exists "Users can update own collection covers"
+  on storage.objects for update
+  using (
+    bucket_id = 'collection-covers'
+    and owner = auth.uid()
+  );
+
+create policy if not exists "Users can delete own collection covers"
+  on storage.objects for delete
+  using (
+    bucket_id = 'collection-covers'
+    and owner = auth.uid()
+  );
