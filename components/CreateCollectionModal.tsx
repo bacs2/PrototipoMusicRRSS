@@ -102,6 +102,7 @@ export function CreateCollectionModal({
       const result = await createCollection(
         nombre.trim(),
         descripcion.trim() || null,
+        null,
         picked.map((p) => ({
           item_type: p.item_type,
           item_id: p.item_id,

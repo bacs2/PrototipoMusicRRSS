@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { User, Lock, LogIn, UserPlus } from "lucide-react";
+import { User, Lock, LogIn, UserPlus, Mail } from "lucide-react";
 
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
@@ -21,7 +22,7 @@ export default function AuthPage() {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, nombre: nombre || username, password }),
+          body: JSON.stringify({ username, email, nombre: nombre || username, password }),
         });
         const data = await res.json();
 
@@ -112,6 +113,21 @@ export default function AuthPage() {
           </div>
 
           {mode === "signup" ? (
+            <>
+            <div>
+              <label className="label-md mb-1.5 block">Correo electrónico</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@correo.com"
+                  required
+                  className="w-full rounded-xl bg-surface-container py-3 pl-10 pr-4 text-sm text-on-surface outline-none transition-all placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-primary/50"
+                />
+              </div>
+            </div>
             <div>
               <label className="label-md mb-1.5 block">Nombre (opcional)</label>
               <div className="relative">
@@ -125,6 +141,7 @@ export default function AuthPage() {
                 />
               </div>
             </div>
+            </>
           ) : null}
 
           <div>

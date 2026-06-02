@@ -7,7 +7,7 @@ type LibraryCardProps = {
 
 export const LibraryCard = ({ item }: LibraryCardProps) => {
   const isArtist = item.itemType === "artista";
-  const stars = Math.round(item.rating / 2);
+  const stars = Math.round((item.rating ?? 0) / 2);
 
   return (
     <a
